@@ -1,3 +1,4 @@
+using Dm.util;
 using EasyAuthenticator.Ext;
 using EasyAuthenticator.Model;
 using System.Text;
@@ -229,7 +230,7 @@ namespace EasyAuthenticator
 
         private void label7_Click(object sender, EventArgs e)
         {
-            var result = label4.Text;
+            var result = label4.Text.replace(" ", "");
             result.ToClipboard();
         }
 
