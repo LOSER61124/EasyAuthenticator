@@ -1,6 +1,7 @@
-using Dm.util;
+ï»¿using Dm.util;
 using EasyAuthenticator.Ext;
 using EasyAuthenticator.Model;
+using EasyAuthenticator.UI;
 using System.Text;
 using WinformLib;
 
@@ -8,45 +9,51 @@ namespace EasyAuthenticator
 {
     public partial class Form1 : Form
     {
-        EasyCrud easy = new EasyCrud(FreeSql.DataType.Sqlite, InitializeSQL: @"CREATE TABLE IF NOT EXISTS PasswordInfo (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Pwd TEXT NOT NULL,
-    Createtime DATETIME NOT NULL,
-    IsDelete INTEGER NOT NULL DEFAULT 0
-);
-");
         private string key = "";
         public Form1()
         {
             InitializeComponent();
+            //ç”Ÿæˆæ¶²ä½“ç»ç’ƒèƒŒæ™¯ç”»å¸ƒï¼ˆ1600x1000è¶³å¤Ÿè¦†ç›–çª—å£å„æ¡£å°ºå¯¸ï¼‰
+            GlassPanel.Artwork = GlassTheme.CreateArtwork(new Size(1600, 1000));
+            this.BackgroundImage = GlassPanel.Artwork;
+            this.BackgroundImageLayout = ImageLayout.None;
         }
 
         /// <summary>
-        /// ³õÊ¼»¯¼ÓÔØ
+        /// å¯ç”¨DWMæ·±è‰²æ ‡é¢˜æ 
+        /// </summary>
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            GlassTheme.EnableDarkTitleBar(Handle);
+        }
+
+        /// <summary>
+        /// åˆå§‹åŒ–åŠ è½½
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Form1_Load(object sender, EventArgs e)
         {
-            key = FormExtentions.GetMachineGuid();//»úÆ÷Âë
+            key = FormExtentions.GetMachineGuid();//æœºå™¨ç 
             this.SetCommon(new FormSettings
             {
                 isExitAsk = false
             });
             label8_Click(sender, e);
-            var isNokey = !easy.GetFreeSql().Select<PasswordInfo>().Any(x=>x.IsDelete ==0);
+            var isNokey = !LocalDb.Fsql.Select<PasswordInfo>().Any(x=>x.IsDelete ==0);
             if (isNokey)
             {
-                button2.Text = "³õÊ¼Éè¶¨";
+                button2.Text = "åˆå§‹è®¾å®š";
                 button1.Enabled = false;
             }
             else
             {
-                //´æÔÚÃÜÂë
-                button2.Text = "ÖØĞÂÉè¶¨";
+                //å­˜åœ¨å¯†ç 
+                button2.Text = "é‡æ–°è®¾å®š";
                 button1.Enabled = true;
 
-                //ÃÜÂëÏÔÊ¾ÉÏÈ¥
+                //å¯†ç æ˜¾ç¤ºä¸Šå»
                 ShowPWDNow();
 
             }
@@ -61,13 +68,13 @@ namespace EasyAuthenticator
                 textBox1.Text = "";
                 return;
             }
-            var pwd = EasyAES.AesDecrypt(key, pwd_aes);//Ã÷ÎÄ
+            var pwd = EasyAES.AesDecrypt(key, pwd_aes);//æ˜æ–‡
 
             textBox1.Text = pwd.Substring(0, 5) + "*******";
         }
 
         /// <summary>
-        /// ¶¨Ê±Æ÷·½·¨
+        /// å®šæ—¶å™¨æ–¹æ³•
         /// </summary>
         /// <exception cref="NotImplementedException"></exception>
         private void StartTimes()
@@ -79,7 +86,8 @@ namespace EasyAuthenticator
                 label4.Text = GetSpaceShow(pwdDetails.CurrentPDW);
                 label5.Text = GetSpaceShow(pwdDetails.PrePWD.ToString());
                 label6.Text = GetSpaceShow(pwdDetails.NextPDW.ToString());
-                label3.Text = $"¾àÀëµ±Ç°Ğ£ÑéÂë¹ıÆÚ»¹²î{pwdDetails.RemainTime}Ãë";
+                label3.Text = $"è·ç¦»å½“å‰æ ¡éªŒç è¿‡æœŸè¿˜å·®{pwdDetails.RemainTime}ç§’";
+                glassProgress1.SetFraction(pwdDetails.RemainTime / 30.0);
 
             }
         }
@@ -95,12 +103,12 @@ namespace EasyAuthenticator
         }
 
         /// <summary>
-        /// »ñÈ¡µ±Ç°ÃÜÂë(ÃÜÎÄ)
+        /// è·å–å½“å‰å¯†ç (å¯†æ–‡)
         /// </summary>
         /// <returns></returns>
         private string? GetCurrentPwd()
         {
-            return easy.GetFreeSql().Select<PasswordInfo>().Where(x => x.IsDelete == 0).OrderByDescending(x => x.Createtime).First()?.Pwd;
+            return LocalDb.Fsql.Select<PasswordInfo>().Where(x => x.IsDelete == 0).OrderByDescending(x => x.Createtime).First()?.Pwd;
         }
 
         private int small = 478;
@@ -124,7 +132,7 @@ namespace EasyAuthenticator
 
         private void Query()
         {
-            var list = easy.GetList<PasswordInfo>(x => x.IsDelete == 0).OrderByDescending(x => x.Createtime).ToList();
+            var list = LocalDb.Fsql.Select<PasswordInfo>().Where(x => x.IsDelete == 0).OrderByDescending(x => x.Createtime).ToList();
             foreach (var item in list)
             {
                 item.Pwd = EasyAES.AesDecrypt(key, item.Pwd).Substring(0, 5) + "*******";
@@ -136,15 +144,15 @@ namespace EasyAuthenticator
                     DataList = list,
                     ButtonList = new List<(string ButtonName, string TitileName, int Width)>
                 {
-                    ("É¾³ı","²Ù×÷",80),
+                    ("åˆ é™¤","æ“ä½œ",80),
                 },
                     HeadtextList = new List<(System.Linq.Expressions.Expression<Func<PasswordInfo, object>> fields, string name, int width)>
                 {
-                    (x=>x.Pwd,"ÃÜÔ¿",160),
-                    (x=>x.Createtime,"´´½¨Ê±¼ä",130),
+                    (x=>x.Pwd,"å¯†é’¥",160),
+                    (x=>x.Createtime,"åˆ›å»ºæ—¶é—´",130),
                 }
                 });
-                dataGridView1.Font = new Font("ËÎÌå", 10);
+                StyleGridButtons();
             }
             else
             {
@@ -155,26 +163,44 @@ namespace EasyAuthenticator
         }
 
         /// <summary>
-        /// Éè¶¨ÃÜÂë
+        /// æ•°æ®è¡¨æ ¼æŒ‰é’®åˆ—æš—è‰²åŒ–ï¼ˆåˆ é™¤æŒ‰é’®ç”¨å±é™©è‰²ï¼‰
+        /// </summary>
+        private void StyleGridButtons()
+        {
+            foreach (DataGridViewColumn col in dataGridView1.Columns)
+            {
+                if (col is DataGridViewButtonColumn bc)
+                {
+                    bc.FlatStyle = FlatStyle.Flat;
+                    bc.DefaultCellStyle.BackColor = Color.FromArgb(40, GlassTheme.Danger);
+                    bc.DefaultCellStyle.ForeColor = Color.White;
+                    bc.DefaultCellStyle.SelectionBackColor = Color.FromArgb(70, GlassTheme.Danger);
+                    bc.DefaultCellStyle.SelectionForeColor = Color.White;
+                }
+            }
+        }
+
+        /// <summary>
+        /// è®¾å®šå¯†ç 
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void button2_Click(object sender, EventArgs e)
         {
-            //Ä¬ÈÏÉú³É
+            //é»˜è®¤ç”Ÿæˆ
             var defaultpwd = TotpHelper.CreateRandomBase32Secret();
 
-            //È·¶¨ÒªÖØĞÂÉè¶¨ÃÜÂëÂğ
-            if (this.PopUpDialog("È·¶¨ÒªÖØĞÂÉè¶¨ÃÜÂëÂğ£¿"))
+            //ç¡®å®šè¦é‡æ–°è®¾å®šå¯†ç å—
+            if (this.PopUpDialog("ç¡®å®šè¦é‡æ–°è®¾å®šå¯†ç å—ï¼Ÿ"))
             {
                 var result = this.SetCustomizeForms(new CustomizeFormsExtentions.CustomizeFormInput
                 {
-                    FormTitle = "ÖØÉèÃÜÂë",
+                    FormTitle = "é‡è®¾å¯†ç ",
                     inputs = new List<CustomizeFormsExtentions.CustomizeValueInput>
                     {
                         new CustomizeFormsExtentions.CustomizeValueInput
                         {
-                            Label = "ÇëÊäÈëĞÂÃÜÔ¿:",
+                            Label = "è¯·è¾“å…¥æ–°å¯†é’¥:",
                             DefaultValue = defaultpwd,
                         }
                     },
@@ -191,15 +217,15 @@ namespace EasyAuthenticator
                 });
                 if (result.Count != 0)
                 {
-                    easy.Insert<PasswordInfo>(new PasswordInfo
+                    LocalDb.Fsql.Insert(new PasswordInfo
                     {
                         IsDelete = 0,
                         Createtime = DateTime.Now,
-                        Pwd = EasyAES.AesEncrypt(key, result["ÇëÊäÈëĞÂÃÜÔ¿:"])
-                    });
-                    //Ë¢ĞÂ
-                    //´æÔÚÃÜÂë
-                    button2.Text = "ÖØĞÂÉè¶¨";
+                        Pwd = EasyAES.AesEncrypt(key, result["è¯·è¾“å…¥æ–°å¯†é’¥:"])
+                    }).ExecuteAffrows();
+                    //åˆ·æ–°
+                    //å­˜åœ¨å¯†ç 
+                    button2.Text = "é‡æ–°è®¾å®š";
                     button1.Enabled = true;
 
 
@@ -210,7 +236,7 @@ namespace EasyAuthenticator
         }
 
         /// <summary>
-        /// ²é¿´
+        /// æŸ¥çœ‹
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -219,11 +245,11 @@ namespace EasyAuthenticator
             var res = GetCurrentPwd();
             if(string.IsNullOrEmpty(res))
             {
-                this.PopUpTips("µ±Ç°Ã»ÓĞÃÜÔ¿£¡");
+                this.PopUpTips("å½“å‰æ²¡æœ‰å¯†é’¥ï¼");
                 return;
             }
             var pwd = EasyAES.AesDecrypt(key, res);
-            this.PopUpTips($"µ±Ç°µÄÃÜÔ¿ÊÇ¡¾{pwd}¡¿,ÒÑµ¼³öµ½¼ôÇĞ°åÖĞ£¡");
+            this.PopUpTips($"å½“å‰çš„å¯†é’¥æ˜¯ã€{pwd}ã€‘,å·²å¯¼å‡ºåˆ°å‰ªåˆ‡æ¿ä¸­ï¼");
             pwd.ToClipboard();
             textBox1.Text = pwd;
         }
@@ -236,20 +262,20 @@ namespace EasyAuthenticator
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            var res = dataGridView1.GetCommonByButton<PasswordInfo>("É¾³ı", e);
-            var now_id = easy.GetFreeSql().Select<PasswordInfo>().OrderByDescending(x => x.Createtime).First()?.Id ?? -1;
+            var res = dataGridView1.GetCommonByButton<PasswordInfo>("åˆ é™¤", e);
+            var now_id = LocalDb.Fsql.Select<PasswordInfo>().OrderByDescending(x => x.Createtime).First()?.Id ?? -1;
             if (res != null)
             {
-                var entity = easy.GetFreeSql().Select<PasswordInfo>().Where(x => x.Id == res.Id).First();
+                var entity = LocalDb.Fsql.Select<PasswordInfo>().Where(x => x.Id == res.Id).First();
                 var isDeleteFirst = res.Id == now_id;
-                var tips = isDeleteFirst ? "ÄúÊÇ·ñÒªÉ¾³ı¡¾µ±Ç°ÃÜÔ¿¡¿£¿É¾³ıÍê³Éºó£¬ÁĞ±íÖĞµÄ×îĞÂÃÜÔ¿»á×Ô¶¯ÉèÎªµ±Ç°ÃÜÔ¿¡£" : "ÄúÒªÉ¾³ıµ±Ç°ÃÜÔ¿Âğ?";
+                var tips = isDeleteFirst ? "æ‚¨æ˜¯å¦è¦åˆ é™¤ã€å½“å‰å¯†é’¥ã€‘ï¼Ÿåˆ é™¤å®Œæˆåï¼Œåˆ—è¡¨ä¸­çš„æœ€æ–°å¯†é’¥ä¼šè‡ªåŠ¨è®¾ä¸ºå½“å‰å¯†é’¥ã€‚" : "æ‚¨è¦åˆ é™¤å½“å‰å¯†é’¥å—?";
                 if (this.PopUpDialog(tips))
                 {
                     res.Pwd = entity.Pwd;
                     res.IsDelete = 1;
-                    easy.Update(res);
+                    LocalDb.Fsql.Update<PasswordInfo>().SetSource(res).ExecuteAffrows();
                 }
-                //Ë¢ĞÂ
+                //åˆ·æ–°
                 Query();
                 ShowPWDNow();
             }
@@ -263,17 +289,17 @@ namespace EasyAuthenticator
             {
                 try
                 {
-                    var list = easy.GetList<PasswordInfo>()
+                    var list = LocalDb.Fsql.Select<PasswordInfo>().ToList()
                                     .OrderByDescending(x=>x.Createtime)
                                     .Select(x => EasyAES.AesDecrypt(key, x.Pwd))
                                     .ToList();
                     string res = string.Join('\n', list);
                     res.ToClipboard();
-                    this.PopUpTips("¡¾Òş²ØÄ£Ê½¡¿ÒÑ½«ÀúÊ·ËùÓĞÃÜÔ¿Êä³öµ½¼ôÇĞ°åÖĞ£¡");
+                    this.PopUpTips("ã€éšè—æ¨¡å¼ã€‘å·²å°†å†å²æ‰€æœ‰å¯†é’¥è¾“å‡ºåˆ°å‰ªåˆ‡æ¿ä¸­ï¼");
                 }
                 catch (Exception ex)
                 {
-                    this.PopUpTips($"¡¾Òş²ØÄ£Ê½¡¿µ÷ÓÃÊ§°Ü£¡{ex}");
+                    this.PopUpTips($"ã€éšè—æ¨¡å¼ã€‘è°ƒç”¨å¤±è´¥ï¼{ex}");
                 }
 
             }
