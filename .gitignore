@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# 本地工具与临时产物（agent skills CLI / 调试脚本）
+.agents/
+.claude/
+skills-lock.json
+scratch-*.ps1

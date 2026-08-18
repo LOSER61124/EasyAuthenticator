@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <Content Include="icon_pwd.ico" />
+    <!-- 液态玻璃底图（嵌入程序集，逻辑名 EasyAuthenticator.bg.jpg） -->
+    <EmbeddedResource Include="..\底层图片.jpg" LogicalName="EasyAuthenticator.bg.jpg" />
   </ItemGroup>
 
   <ItemGroup>
