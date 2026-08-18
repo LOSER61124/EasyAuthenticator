@@ -1,4 +1,3 @@
-﻿using Dm.util;
 using EasyAuthenticator.Ext;
 using EasyAuthenticator.Model;
 using EasyAuthenticator.UI;
@@ -496,7 +495,7 @@ namespace EasyAuthenticator
 
         private void label7_Click(object sender, EventArgs e)
         {
-            var result = heroCodeOverlay!.Text.replace(" ", "");
+            var result = heroCodeOverlay!.Text.Replace(" ", "");
             result.ToClipboard();
         }
 

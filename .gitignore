@@ -366,3 +366,6 @@ FodyWeavers.xsd
 .claude/
 skills-lock.json
 scratch-*.ps1
+
+# 发布产物
+publish/
